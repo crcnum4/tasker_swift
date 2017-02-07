@@ -265,7 +265,6 @@ class ViewController: UIViewController {
             let params = "token=\(token)&uuid=\(uuid!)"
             
             let url = URL(string: root_url + "/check_tkn?" + params.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)!)
-            print(url)
             
             let request = NSMutableURLRequest(url: url!)
             

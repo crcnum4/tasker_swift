@@ -11,6 +11,7 @@ import UIKit
 class MyTableCell: UITableViewCell {
     @IBOutlet weak var descriptionLabel: UILabel!
     @IBOutlet weak var dateLabel: UILabel!
+    var taskID = 0
     
     override func awakeFromNib() {
         super.awakeFromNib()

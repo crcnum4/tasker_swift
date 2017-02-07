@@ -13,6 +13,7 @@ class TaskerTableVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
     @IBOutlet weak var taskTable: UITableView!
     var tasks:NSArray = [] as NSArray
     var tasksflag:Bool = false
+    var selectedTask = 0
     
     internal func numberOfSections(in tableView: UITableView) -> Int {
         return tasks.count
@@ -52,14 +53,32 @@ class TaskerTableVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
         let newreadableDate = dateFmt.date(from: apiDate!)
         
         let dateFmtString = DateFormatter()
-        dateFmtString.dateFormat = "MMMM dd, yyyy HH:mm"
+        dateFmtString.dateFormat = "MMMM dd '|' HH:mm"
         let taskDate = dateFmtString.string(from: newreadableDate!)
         
         cell.dateLabel.text = taskDate
+        cell.taskID = aTask.value(forKey: "id") as! Int
+        
+        
         
         return cell
         
         
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let currentCell = tableView.cellForRow(at: indexPath) as! MyTableCell
+        
+        selectedTask = currentCell.taskID
+        
+        performSegue(withIdentifier: "showTaskSegue", sender: nil)
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "showTaskSegue" {
+            let secondVC = segue.destination as! ViewTaskVC
+            secondVC.taskID = selectedTask
+        }
     }
     
     override func viewDidLoad() {
@@ -85,7 +104,7 @@ class TaskerTableVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
                         do {
                             let jsonResult = try JSONSerialization.jsonObject(with: urlContent, options: JSONSerialization.ReadingOptions.mutableContainers) as! NSDictionary
                             
-                            print(jsonResult)
+//                            print(jsonResult)
                             
                             let resultInfo = jsonResult.value(forKey: "status") as! NSDictionary
                             
@@ -96,9 +115,11 @@ class TaskerTableVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
                             }
                             
                             if status == "success" {
-                                print(jsonResult.value(forKey: "tasks") as! NSArray)
+//                                print(jsonResult.value(forKey: "tasks") as! NSArray)
                                 self.tasks = jsonResult.value(forKey: "tasks") as! NSArray
-                                self.taskTable.reloadData()
+                                DispatchQueue.main.async {
+                                    self.taskTable.reloadData()
+                                }
                             }
                         } catch {
                             //process error

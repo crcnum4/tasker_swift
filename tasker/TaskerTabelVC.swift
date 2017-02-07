@@ -11,9 +11,13 @@ import UIKit
 class TaskerTableVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
     @IBOutlet weak var taskTable: UITableView!
-    var tasks:NSArray = [] as NSArray
+    var tasks:Array = [] as Array
     var tasksflag:Bool = false
     var selectedTask = 0
+    var last_update = ""
+    let root_url = "https://rails-api-test-crcnum4.c9users.io/"
+    
+    var timer = Timer()
     
     internal func numberOfSections(in tableView: UITableView) -> Int {
         return tasks.count
@@ -53,7 +57,7 @@ class TaskerTableVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
         let newreadableDate = dateFmt.date(from: apiDate!)
         
         let dateFmtString = DateFormatter()
-        dateFmtString.dateFormat = "MMMM dd '|' HH:mm"
+        dateFmtString.dateFormat = "MMMM dd '|' h:mm a"
         let taskDate = dateFmtString.string(from: newreadableDate!)
         
         cell.dateLabel.text = taskDate
@@ -68,7 +72,6 @@ class TaskerTableVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let currentCell = tableView.cellForRow(at: indexPath) as! MyTableCell
-        
         selectedTask = currentCell.taskID
         
         performSegue(withIdentifier: "showTaskSegue", sender: nil)
@@ -81,11 +84,63 @@ class TaskerTableVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
         }
     }
     
+    func checkNewTasks() {
+        let token = UserDefaults.standard.object(forKey: "tasker_token") as! String
+        
+        let params = "token=\(token)&time=\(last_update)"
+        let url = URL(string: root_url + "/update_list?" + params.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)!)
+        let request = NSMutableURLRequest(url: url!)
+        
+        let task = URLSession.shared.dataTask(with: request as URLRequest) { (data, response, error) in
+            
+            if error != nil {
+                print(error ?? "no errors")
+            } else {
+                if let urlContent = data {
+                    do {
+                        let jsonResult = try JSONSerialization.jsonObject(with: urlContent, options: JSONSerialization.ReadingOptions.mutableContainers) as! NSDictionary
+                        
+                        let resultInfo = jsonResult.value(forKey: "status") as! NSDictionary
+                        
+                        let status = resultInfo.value(forKey: "status") as! String
+                        
+                        if status == "error" {
+                            print("Error: \(resultInfo.value(forKey: "message") as! String)")
+                        }
+                        
+                        if status == "success" {
+                            let items = jsonResult.value(forKey: "tasks") as! Array<Any>
+                            
+                            for item in items {
+                                self.tasks.append(item)
+                            }
+                            DispatchQueue.main.async {
+
+                                self.taskTable.reloadData()
+                            }
+                        }
+                    } catch {
+                        //process error
+                        print("failed to collect tasks")
+                    }
+                }
+            }
+        }
+        DispatchQueue.main.async {
+            let date = Date()
+            let dateFmtString = DateFormatter()
+            dateFmtString.timeZone = NSTimeZone(forSecondsFromGMT: 0) as TimeZone!
+            dateFmtString.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            self.last_update = dateFmtString.string(from: date)
+        }
+        task.resume()
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        let root_url = "https://rails-api-test-crcnum4.c9users.io/"
+        
         
         if UserDefaults.standard.object(forKey: "tasker_token") != nil {
             let token = UserDefaults.standard.object(forKey: "tasker_token") as! String
@@ -104,8 +159,6 @@ class TaskerTableVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
                         do {
                             let jsonResult = try JSONSerialization.jsonObject(with: urlContent, options: JSONSerialization.ReadingOptions.mutableContainers) as! NSDictionary
                             
-//                            print(jsonResult)
-                            
                             let resultInfo = jsonResult.value(forKey: "status") as! NSDictionary
                             
                             let status = resultInfo.value(forKey: "status") as! String
@@ -115,10 +168,18 @@ class TaskerTableVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
                             }
                             
                             if status == "success" {
-//                                print(jsonResult.value(forKey: "tasks") as! NSArray)
-                                self.tasks = jsonResult.value(forKey: "tasks") as! NSArray
+                                
+                                
                                 DispatchQueue.main.async {
+                                    self.tasks = jsonResult.value(forKey: "tasks") as! Array<Any>
+                                    let date = Date()
+                                    let dateFmtString = DateFormatter()
+                                    dateFmtString.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                                    dateFmtString.timeZone = NSTimeZone(forSecondsFromGMT: 0) as TimeZone!
+                                    self.last_update = dateFmtString.string(from: date)
+
                                     self.taskTable.reloadData()
+                                    self.timer = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(TaskerTableVC.checkNewTasks), userInfo: nil, repeats: true)
                                 }
                             }
                         } catch {

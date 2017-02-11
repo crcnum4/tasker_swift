@@ -10,6 +10,7 @@ import UIKit
 
 class TaskerTableVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
+    @IBOutlet weak var newTaskbtn: UIBarButtonItem!
     @IBOutlet weak var taskTable: UITableView!
     var tasks:Array = [] as Array
     var tasksflag:Bool = false
@@ -73,7 +74,7 @@ class TaskerTableVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let currentCell = tableView.cellForRow(at: indexPath) as! MyTableCell
         selectedTask = currentCell.taskID
-        
+        timer.invalidate()
         performSegue(withIdentifier: "showTaskSegue", sender: nil)
     }
     
@@ -139,7 +140,6 @@ class TaskerTableVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        
         
         
         if UserDefaults.standard.object(forKey: "tasker_token") != nil {

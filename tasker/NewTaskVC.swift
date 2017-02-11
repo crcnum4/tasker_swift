@@ -8,7 +8,7 @@
 
 import UIKit
 
-class NewTaskVC: UIViewController {
+class NewTaskVC: UIViewController, UITextViewDelegate {
     
     @IBOutlet weak var taskNameTextField: UITextField!
     @IBOutlet weak var taskDescriptionTextField: UITextView!
@@ -69,7 +69,11 @@ class NewTaskVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        taskDescriptionTextField.delegate = self
+    }
+    
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        taskDescriptionTextField.text = ""
     }
     
     override func didReceiveMemoryWarning() {

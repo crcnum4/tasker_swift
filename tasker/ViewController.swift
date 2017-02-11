@@ -16,6 +16,7 @@ class ViewController: UIViewController {
     @IBOutlet weak var passwordTextField: UITextField!
     @IBOutlet weak var signup: UIButton!
     @IBOutlet weak var loginBtn: UIButton!
+    var timer = Timer()
     
     @IBAction func signupClick(_ sender: Any) {
         if signup.titleLabel?.text! == "Sign Up" {
@@ -149,7 +150,7 @@ class ViewController: UIViewController {
                                         print("Error: " + (jsonResult.value(forKey: "message") as! String))
                                     }
                                     if status == "success" {
-                                        UserDefaults.standard.set(username, forKey: "tasker_username")
+//                                        UserDefaults.standard.set(username, forKey: "tasker_username")
                                         username = jsonResult.value(forKey: "username") as! String
                                         print(username)
                                         
@@ -214,8 +215,10 @@ class ViewController: UIViewController {
                                                                 
                                                             }
                                                             if status == "success" {
-                                                                UserDefaults.standard.set((jsonResult.value(forKey: "token") as! String), forKey: "tasker_token")
-                                                                print(jsonResult.value(forKey: "token") as! String)
+                                                                DispatchQueue.main.async {
+                                                                    UserDefaults.standard.set((jsonResult.value(forKey: "token") as! String), forKey: "tasker_token")
+                                                                    print(jsonResult.value(forKey: "token") as! String)
+                                                                }
                                                             }
                                                             
                                                         }
@@ -243,18 +246,22 @@ class ViewController: UIViewController {
                 
                 task.resume()
                 
-                
             }
         }
     }
     
     
-    
+    func checkToken() {
+        if UserDefaults.standard.object(forKey: "tasker_token") != nil {
+            timer.invalidate()
+            self.performSegue(withIdentifier: "login", sender: nil)
+        }
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        
+        //UserDefaults.standard.set(nil, forKey: "tasker_token")Devi
         if UserDefaults.standard.object(forKey: "tasker_token") != nil {
             
             let token = UserDefaults.standard.object(forKey: "tasker_token") as! String
@@ -301,6 +308,8 @@ class ViewController: UIViewController {
             task.resume()
             
         }
+        
+        timer = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(ViewController.checkToken), userInfo: nil, repeats: true)
         
     }
 
